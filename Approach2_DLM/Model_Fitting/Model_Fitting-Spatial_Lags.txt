@@ -1,0 +1,82 @@
+#############################################################################################################################
+#Global Settings
+#############################################################################################################################
+age_group<-"80y"
+load(paste("C:\\Users\\jlw98\\Desktop\\Yale Research\\MIDAS R01\\Aim_3\\Spatial_DL-Kayoko_Shioda\\Brazil_States\\Age_Group_",
+              age_group,
+              ".RData",
+              sep=""))
+
+##############################################################
+#Finalizing x Data 
+##############################################################
+complete_cov_set_temp<-array(as.numeric(is.na(x) == 0),
+                             dim = c(dim(x)))
+complete_cov_set<-matrix(0, 
+                         nrow = dim(complete_cov_set_temp)[2],
+                         ncol = dim(complete_cov_set_temp)[3])
+
+x_final<-x
+for(j in 1:dim(complete_cov_set_temp)[2]){
+
+   for(k in 1:dim(complete_cov_set_temp)[3]){
+
+      complete_cov_set[j,k]<-mean(complete_cov_set_temp[,j,k])
+      x_final[,j,k]<-scale(x[,j,k])
+
+      }
+
+   }
+x_final[is.na(x_final) == 1]<- -999
+
+###################################
+#Looping Across all Spatial Regions
+###################################
+for(region_key in 1:dim(x)[3]){
+
+   #########################################################################################################
+   #Fitting Model
+   #########################################################################################################
+   results_spatial_lags<-spatial_lags(burnin = 500000,
+                                      samples = 500000,
+                                      thin = 50,
+                                      chains = 2,
+                                      regularize = 1,
+                                      dic = 1,  
+                                      n_full = (n_full - 6),  #Accounting for Lag
+                                      n_modeling = (n_modeling - 6),  #Accounting for Lag
+                                      y_modeling = y_modeling[region_key, c(7:n_full)],  #Accounting for Lag
+                                      offset = rep(0, times = (n_full - 6)),  #Accounting for Lag
+                                      z = z[c(7:n_full),,region_key],  #Accounting for Lag
+                                      x = x_final[c(7:n_full),,],  #Accounting for Lag
+                                      dists = dists[region_key,],
+                                      complete_cov_set = complete_cov_set)
+
+   ##################################################
+   #Saving Results
+   ##################################################
+   if(region_key < 10){
+     save(results_spatial_lags, 
+          file = paste("Brazil_Age_Group_",
+                       age_group,
+                       "_S0", 
+                       region_key, ".RData", sep=""))
+     }
+
+   if(region_key >= 10){
+     save(results_spatial_lags, 
+          file = paste("Brazil_Age_Group_",
+                       age_group,
+                       "_S", 
+                       region_key, ".RData", sep=""))
+     }
+
+   }
+
+
+
+
+
+
+
+

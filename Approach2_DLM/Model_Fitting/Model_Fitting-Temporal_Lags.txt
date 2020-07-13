@@ -1,0 +1,74 @@
+#############################################################################################################################
+#Global Settings
+#############################################################################################################################
+age_group<-"12m"
+load(paste("C:\\Users\\jlw98\\Desktop\\Yale Research\\MIDAS R01\\Aim_3\\Spatial_DL-Kayoko_Shioda\\Brazil_States\\Age_Group_",
+              age_group,
+              ".RData",
+              sep=""))
+
+###################################
+#Looping Across all Spatial Regions
+###################################
+for(region_key in 1:dim(x)[3]){
+
+   ################################################
+   #Finalizing x Data 
+   ################################################ 
+   x_final<-rep(NA, 
+                times = dim(x)[1])
+   for(j in 1:dim(x)[2]){
+
+      if(mean(is.na(x[,j, region_key]) == 0) == 1){
+        x_final<-cbind(x_final, x[,j, region_key])
+        }
+
+      }
+   x_final<-x_final[,-1]
+   x_final<-scale(x_final)
+
+   ##########################################################################
+   #Fitting Model
+   ##########################################################################   
+   results_temporal_lags<-temporal_lags(burnin = 500000,
+                                        samples = 500000,
+                                        thin = 50,
+                                        chains = 2,
+                                        regularize = 1,
+                                        dic = 1,  
+                                        n_full = n_full,
+                                        n_modeling = n_modeling,
+                                        y_modeling = y_modeling[region_key,],
+                                        offset = rep(0, times = n_full),
+                                        z = z[,,region_key],
+                                        x = x_final,
+                                        lag = 6)
+
+   ##################################################
+   #Saving Results
+   ##################################################
+   if(region_key < 10){
+     save(results_temporal_lags, 
+          file = paste("Brazil_Age_Group_",
+                       age_group,
+                       "_S0", 
+                       region_key, ".RData", sep=""))
+     }
+
+   if(region_key >= 10){
+     save(results_temporal_lags, 
+          file = paste("Brazil_Age_Group_",
+                       age_group,
+                       "_S", 
+                       region_key, ".RData", sep=""))
+     }
+
+   }
+
+
+
+
+
+
+
+
